@@ -20,6 +20,7 @@ use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\DiscriminatorMap;
 use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Serializer\Attribute\SerializedPath;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Exception\ExtraAttributesException;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\LogicException;
@@ -1224,6 +1225,20 @@ class AbstractObjectNormalizerTest extends TestCase
             [['foo' => 'something'], null],
         ];
     }
+
+    public function testDeserializeJsonIntoArrayObject()
+    {
+        $data = '{"foo": {"key": "value"}}';
+
+        $normalizers = [new ObjectNormalizer(null, null, null, new PhpDocExtractor())];
+        $encoders = [new JsonEncoder()];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        $actual = $serializer->deserialize($data, DummyWithArrayObject::class, 'json');
+        $this->assertInstanceOf(DummyWithArrayObject::class, $actual);
+        $this->assertInstanceOf(\ArrayObject::class, $actual->foo);
+        $this->assertSame(1, $actual->foo->count());
+    }
 }
 
 class AbstractObjectNormalizerDummy extends AbstractObjectNormalizer
@@ -1512,6 +1527,12 @@ class TruePropertyDummy
 class BoolPropertyDummy
 {
     /** @var null|bool */
+    public $foo;
+}
+
+class DummyWithArrayObject
+{
+    /** @var \ArrayObject<string, mixed> */
     public $foo;
 }
 
